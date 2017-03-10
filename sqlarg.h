@@ -1,3 +1,5 @@
+#ifndef LCMYSQL_ARG_H
+#define LCMYSQL_ARG_H
 
 #include <cstdint>
 #include <cstring>
@@ -200,3 +202,5 @@ public:
 };
 
 LC_SQL_DECL_END
+
+#endif

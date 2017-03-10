@@ -1,5 +1,5 @@
-#ifndef SQL_BUILDER_H
-#define SQL_BUILDER_H
+#ifndef LCMYSQL_BUILDER_H
+#define LCMYSQL_BUILDER_H
 
 #include <cstdint>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef SQL_QUERY_H
-#define SQL_QUERY_H
+#ifndef LCMYSQL_QUERY_H
+#define LCMYSQL_QUERY_H
 
 #include <lcmysql/sqldecls.h>
 #include <lcmysql/sqlbuilder.h>
