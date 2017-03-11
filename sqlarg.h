@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 
-#include <lcmysql/sqldecls.h>
+#include "sqldecls.h"
 
 LC_SQL_DECL_BEGIN
 

@@ -1,10 +1,10 @@
-#ifndef LC_MYSQL_EXCEPTION_H
-#define LC_MYSQL_EXCEPTION_H
+#ifndef LCMYSQL_EXCEPTION_H
+#define LCMYSQL_EXCEPTION_H
 
 #include <string>
 #include <stdexcept>
-#include <lcmysql/sqldecls.h>
-#include <lcmysql/sqlarg.h>
+#include "sqldecls.h"
+#include "sqlarg.h"
 
 LC_SQL_DECL_BEGIN
 

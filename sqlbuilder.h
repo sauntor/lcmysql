@@ -19,8 +19,8 @@
 #include <cppconn/connection.h>
 #include <cppconn/datatype.h>
 
-#include <lcmysql/sqldecls.h>
-#include <lcmysql/sqlarg.h>
+#include "sqldecls.h"
+#include "sqlarg.h"
 
 LC_SQL_DECL_BEGIN
 

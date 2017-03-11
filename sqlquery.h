@@ -1,6 +1,7 @@
 #ifndef LCMYSQL_QUERY_H
 #define LCMYSQL_QUERY_H
 
+#include <memory>
 #include <lcmysql/sqldecls.h>
 #include <lcmysql/sqlbuilder.h>
 #include <lcmysql/sqlexception.h>
@@ -87,33 +88,9 @@ int Update(sql::Connection& connection, SqlBuilder& builder) throw(ArgTypeExcept
 
 
 
-// ============================== internal(private) implementations ============================
-static std::string internal::escape(std::string & str, const char* c, const char * p)
-{
-    int j = 0;
-    std::stringstream s;
-    for(std::string::iterator i = str.begin(); i != str.end(); i++)
-    {
-        j++;
-        if (*i == *c)
-        {
-            s << p;
-        }
-        else
-        {
-            s << *i;
-        }
-    }
-    str = s.str();
-    return str;
-}
-static const char* internal::escape(const char *str, const char* c, const char * p)
-{
-    std::string ss(str);
-    return escape(ss, c, p).c_str();
-}
-
-
+// ======================================
+// internal(private) implementations
+// ======================================
 std::shared_ptr<sql::PreparedStatement> internal::prepareStatement(sql::Connection& connection, SqlBuilder& builder)
 {
     using Type = SqlArg::Type;
@@ -242,6 +219,33 @@ static int internal::_doUpdate(sql::Connection& connection, SqlBuilder& builder)
     std::shared_ptr<sql::Statement> stmt(connection.createStatement());
     return stmt->executeUpdate(sql);
 }
+
+static std::string internal::escape(std::string & str, const char* c, const char * p)
+{
+    int j = 0;
+    std::stringstream s;
+    for(std::string::iterator i = str.begin(); i != str.end(); i++)
+    {
+        j++;
+        if (*i == *c)
+        {
+            s << p;
+        }
+        else
+        {
+            s << *i;
+        }
+    }
+    str = s.str();
+    return str;
+}
+static inline const char* internal::escape(const char *str, const char* c, const char * p)
+{
+    std::string ss(str);
+    return escape(ss, c, p).c_str();
+}
+
+
 
 LC_SQL_DECL_END
 
