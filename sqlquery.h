@@ -2,6 +2,11 @@
 #define LCMYSQL_QUERY_H
 
 #include <memory>
+#include <map>
+#include <cppconn/datatype.h>
+#include <cppconn/resultset.h>
+#include <cppconn/resultset_metadata.h>
+#include <cppconn/variant.h>
 #include <lcmysql/sqldecls.h>
 #include <lcmysql/sqlbuilder.h>
 #include <lcmysql/sqlexception.h>
@@ -11,10 +16,6 @@ LC_SQL_DECL_BEGIN
 namespace internal
 {
     static std::shared_ptr<sql::PreparedStatement> prepareStatement(sql::Connection& connection, SqlBuilder& builder);
-    static std::string escape(std::string & str, const char* c, const char * p);
-    static const char* escape(const char *str, const char* c, const char * p);
-    static const char* SQL_PARAM_HOLDER = "?";
-    static int _doUpdate(sql::Connection& connection, SqlBuilder& builder) throw(ArgTypeException);
 }
 
 template<typename T>
@@ -75,14 +76,84 @@ std::shared_ptr<T>  QueryOne(sql::Connection& connection, SqlBuilder& builder, S
     }
 }
 
+std::shared_ptr< std::map< std::string, SqlArg* > >  QueryMap(sql::Connection& connection,
+        SqlBuilder& builder, const SqlArg::Type types[]) throw(NotOnlyOneException, HasNoneException)
+{
+    std::shared_ptr< std::map< std::string, SqlArg* > > one(new std::map<std::string, SqlArg*>());
+
+    std::shared_ptr<sql::PreparedStatement> stmt = internal::prepareStatement(connection, builder);
+    std::unique_ptr<sql::ResultSet> rs(stmt->executeQuery());
+    size_t count = rs->rowsCount();
+    if (count > 1)
+    {
+        throw NotOnlyOneException(builder.sql(), builder.args(), 1, count, "excepted rowsCount is 1, but more than one row was selected");
+    }
+    if (rs->next())
+    {
+        sql::ResultSetMetaData* metadata = rs->getMetaData();
+        unsigned int columns = metadata->getColumnCount();
+        for (int i = 1; i <= columns; i++)
+        {
+            std::string label = metadata->getColumnLabel(i).asStdString();
+            switch(types[i - 1])
+            {
+                case SqlArg::Type::Bool:
+                {
+                    (* one)[label] = new SqlArg(rs->getBoolean(i));
+                    break;
+                }
+                case SqlArg::Type::Int:
+                {
+                    (* one)[label] = new SqlArg(rs->getInt(i));
+                    break;
+                }
+                case SqlArg::Type::UInt:
+                {
+                    (* one)[label] = new SqlArg(rs->getUInt(i));
+                    break;
+                }
+                case SqlArg::Type::Long:
+                {
+                    (* one)[label] = new SqlArg(rs->getInt64(i));
+                    break;
+                }
+                case SqlArg::Type::ULong:
+                {
+                    (* one)[label] = new SqlArg(rs->getUInt64(i));
+                    break;
+                }
+                case SqlArg::Type::String:
+                {
+                    (* one)[label] = new SqlArg(rs->getString(i).asStdString());
+                    break;
+                }
+                case SqlArg::Type::Blob:
+                {
+                    (* one)[label] = new SqlArg(rs->getBlob(i));
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        throw NotOnlyOneException(builder.sql(), builder.args(), 1, 0, "excepted rowsCount is 1, but no row was selected");
+    }
+    return one;
+}
+
+
+
 int Delete(sql::Connection& connection, SqlBuilder& builder) throw(ArgTypeException)
 {
-    return internal::_doUpdate(connection, builder);
+    std::shared_ptr<sql::PreparedStatement> stmt = internal::prepareStatement(connection, builder);
+    return stmt->executeUpdate();
 }
 
 int Update(sql::Connection& connection, SqlBuilder& builder) throw(ArgTypeException)
 {
-    return internal::_doUpdate(connection, builder);
+    std::shared_ptr<sql::PreparedStatement> stmt = internal::prepareStatement(connection, builder);
+    return stmt->executeUpdate();
 }
 
 
@@ -130,122 +201,13 @@ std::shared_ptr<sql::PreparedStatement> internal::prepareStatement(sql::Connecti
                 break;
             default:
             {
-                throw ArgTypeException(arg->type(), "bad sql arg type: " + std::to_string((int) arg->type()));
+                throw ArgTypeException(arg->type(),
+                        "bad sql arg type: " + std::to_string((int) arg->type()));
             }            
         }
     }
     return stmt;
 }
-
-static int internal::_doUpdate(sql::Connection& connection, SqlBuilder& builder) throw(ArgTypeException)
-{
-    using Type = SqlArg::Type;
-    const std::list<SqlArg*>& args = builder.args();
-    std::string sql(builder.sql());
-    std::string::size_type pos = sql.find_first_of(internal::SQL_PARAM_HOLDER, 0);
-    int k = 1;
-    for (std::list<SqlArg*>::const_iterator i = args.cbegin(); i != args.cend(); ++i, k++)
-    {
-        const SqlArg* arg = *i;
-        switch(arg->type())
-        {
-            case Type::Int:
-            {
-                std::string s = std::to_string(arg->asInt());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::Long:
-            {
-                std::string s = std::to_string(arg->asLong());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::Bool:
-            {
-                std::string s = std::to_string(arg->asBool());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::UInt:
-            {
-                std::string s = std::to_string(arg->asUInt());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::ULong:
-            {
-                std::string s = std::to_string(arg->asULong());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::Double:
-            {
-                std::string s = std::to_string(arg->asDouble());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::String:
-            {
-                std::string s = std::string(arg->asString()->asStdString());
-                s = internal::escape(s, "\\", "\\\\");
-                s = internal::escape(s, "'", "\\'");
-                s.insert(s.begin(), '\'');
-                s.insert(s.end(), '\'');
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            case Type::Blob:
-            {
-                std::string s = std::to_string(arg->asInt());
-                sql.replace(pos, 1, s);
-                pos += s.size() + 1;
-                break;
-            }
-            default:
-            {
-                throw ArgTypeException(arg->type(), "bad sql arg type: " + std::to_string((int) arg->type()));
-            }            
-        }
-        pos = sql.find_first_of(internal::SQL_PARAM_HOLDER, pos);
-    }
-    std::shared_ptr<sql::Statement> stmt(connection.createStatement());
-    return stmt->executeUpdate(sql);
-}
-
-static std::string internal::escape(std::string & str, const char* c, const char * p)
-{
-    int j = 0;
-    std::stringstream s;
-    for(std::string::iterator i = str.begin(); i != str.end(); i++)
-    {
-        j++;
-        if (*i == *c)
-        {
-            s << p;
-        }
-        else
-        {
-            s << *i;
-        }
-    }
-    str = s.str();
-    return str;
-}
-static inline const char* internal::escape(const char *str, const char* c, const char * p)
-{
-    std::string ss(str);
-    return escape(ss, c, p).c_str();
-}
-
-
 
 LC_SQL_DECL_END
 

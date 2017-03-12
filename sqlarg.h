@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <memory>
+#include <cppconn/sqlstring.h>
 
 #include "sqldecls.h"
 
@@ -23,9 +24,7 @@ private:
         UInt,
         Long,
         ULong,
-        Float,
         Double,
-        BigInt,
         String,
         Blob
     };
@@ -49,6 +48,8 @@ private:
 public:
     typedef SqlType Type;
 
+    //SqlArg() {}
+
     SqlArg(const SqlArg& arg)
     {
         switch(arg._type)
@@ -69,11 +70,16 @@ public:
                 _ulong = arg._ulong;
                 break;
             case Type::String:
-                _string = new sql::SQLString(*arg._string);
+            {
+                _string = new sql::SQLString(*arg._rawString);
                 _rawString = arg._rawString;
                 break;
+            }
             case Type::Double:
                 _double = arg._double;
+                break;
+            case Type::Blob:
+                _blob = arg._blob;
                 break;
             default:
                 break;
@@ -93,6 +99,7 @@ public:
     SqlArg(const std::string& value): SqlArg(value.c_str()) { _type = Type::String; }
     SqlArg(double value): _double(value), _type(Type::Double) {}
     SqlArg(Type type, const std::string& value): SqlArg(value) { _type = type; }
+    SqlArg(std::istream* value): _blob(value), _type(Type::Blob) {}
     
     ~SqlArg()
     {
@@ -141,6 +148,10 @@ public:
     sql::SQLString* asString() const
     {
         return _string;
+    }
+    const std::string& asStdString() const
+    {
+        return * _rawString;
     }
     std::istream* asBlob() const
     {
