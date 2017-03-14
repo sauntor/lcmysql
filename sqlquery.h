@@ -122,6 +122,11 @@ std::shared_ptr< std::map< std::string, SqlArg* > >  QueryMap(sql::Connection& c
                     (* one)[label] = new SqlArg(rs->getUInt64(i));
                     break;
                 }
+                case SqlArg::Type::Double:
+                {
+                    (* one)[label] = new SqlArg(rs->getDouble(i));
+                    break;
+                }
                 case SqlArg::Type::String:
                 {
                     (* one)[label] = new SqlArg(rs->getString(i).asStdString());

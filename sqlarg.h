@@ -36,7 +36,7 @@ private:
         std::uint32_t _uint;
         std::int64_t _long;
         std::uint64_t _ulong;
-        double _double;
+        long double _double;
         std::istream* _blob;
         sql::SQLString* _string;
     };
@@ -96,7 +96,8 @@ public:
         _rawString.reset(new std::string(value));
         _string = new sql::SQLString(* _rawString);
     }
-    SqlArg(const std::string& value): SqlArg(value.c_str()) { _type = Type::String; }
+    SqlArg(const std::string& value): SqlArg(value.c_str()) {}
+    SqlArg(long double value): _double(value), _type(Type::Double) {}
     SqlArg(double value): _double(value), _type(Type::Double) {}
     SqlArg(Type type, const std::string& value): SqlArg(value) { _type = type; }
     SqlArg(std::istream* value): _blob(value), _type(Type::Blob) {}
@@ -140,6 +141,10 @@ public:
     std::uint64_t asULong() const
     {
         return _ulong;
+    }
+    long double asLongDouble() const
+    {
+        return _double;
     }
     double asDouble() const
     {
