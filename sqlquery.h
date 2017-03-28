@@ -7,9 +7,9 @@
 #include <cppconn/resultset.h>
 #include <cppconn/resultset_metadata.h>
 #include <cppconn/variant.h>
-#include <lcmysql/sqldecls.h>
-#include <lcmysql/sqlbuilder.h>
-#include <lcmysql/sqlexception.h>
+#include "lcmysql/sqldecls.h"
+#include "lcmysql/sqlbuilder.h"
+#include "lcmysql/sqlexception.h"
 
 LC_SQL_DECL_BEGIN
 
@@ -194,7 +194,7 @@ std::shared_ptr<sql::PreparedStatement> internal::prepareStatement(sql::Connecti
                 stmt->setUInt64(k, arg->asULong());
                 break;
             case Type::Double:
-                stmt->setDouble(k, arg->asDouble());
+                stmt->setDouble(k, arg->asLongDouble());
                 break;
             case Type::String:
             {
